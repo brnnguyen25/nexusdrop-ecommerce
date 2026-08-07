@@ -19,17 +19,14 @@ export default function NavBar() {
           <Link href="/products" className="transition-colors hover:text-white">
             Shop
           </Link>
-          <Link
-            href="/products?category=audio"
-            className="transition-colors hover:text-white"
-          >
-            Categories
+          <Link href="/wishlist" className="transition-colors hover:text-white">
+            Wishlist
           </Link>
-          <Link
-            href="/products?sort=deals"
-            className="transition-colors hover:text-white"
-          >
-            Deals
+          <Link href="/faq" className="transition-colors hover:text-white">
+            FAQ
+          </Link>
+          <Link href="/contact" className="transition-colors hover:text-white">
+            Contact Us
           </Link>
           <Link href="/about" className="transition-colors hover:text-white">
             About

@@ -1,54 +1,25 @@
 import Link from "next/link";
-
-const FEATURED_PRODUCTS = [
-  {
-    id: "mech-keyboard",
-    name: "Apex Pro Mini Mechanical Keyboard",
-    category: "Peripherals",
-    price: 149.99,
-    rating: "4.9",
-    image: "⌨️",
-  },
-  {
-    id: "4k-oled-monitor",
-    name: 'Monolith 32" 4K OLED 240Hz',
-    category: "Displays",
-    price: 799.99,
-    rating: "5.0",
-    image: "🖥️",
-  },
-  {
-    id: "anc-headphones",
-    name: "Aura Sound ANC Wireless Headphones",
-    category: "Audio Tech",
-    price: 249.99,
-    rating: "4.8",
-    image: "🎧",
-  },
-];
+import Image from "next/image";
+import dbConnect from "@/lib/mongodb";
+import Product from "@/models/Product";
 
 const CATEGORIES = [
-  {
-    name: "Audio Tech",
-    count: "18 Items",
-    icon: "🎧",
-    href: "/products?category=audio",
-  },
-  {
-    name: "Wearables",
-    count: "12 Items",
-    icon: "⌚",
-    href: "/products?category=wearables",
-  },
-  {
-    name: "Workspace Essentials",
-    count: "34 Items",
-    icon: "🖥️",
-    href: "/products?category=workspace",
-  },
+  { name: "Audio Tech", href: "/products?category=audio" },
+  { name: "Peripherals", href: "/products?category=peripherals" },
+  { name: "Displays", href: "/products?category=displays" },
+  { name: "Workspace Essentials", href: "/products?category=workspace" },
 ];
 
-export default function Home() {
+async function getFeaturedProducts() {
+  await dbConnect();
+  const products = await Product.find({}).sort({ rating: -1 }).limit(3).lean();
+  return JSON.parse(JSON.stringify(products));
+}
+
+export default async function Home() {
+  const featuredProducts = await getFeaturedProducts();
+  const flagshipProduct = featuredProducts[0] || null;
+
   return (
     <div className="space-y-16 py-6">
       {/* 1. Hero Section */}
@@ -72,7 +43,6 @@ export default function Home() {
             aesthetics.
           </p>
 
-          {/* CTA Group */}
           <div className="flex flex-wrap gap-4 pt-2">
             <Link
               href="/products"
@@ -82,7 +52,7 @@ export default function Home() {
             </Link>
             <Link
               href="/products?sort=featured"
-              className="px-6 py-3.5 rounded-xl glass-panel text-white font-semibold text-sm hover:border-[#8B5CF6] transition-all"
+              className="px-6 py-3.5 rounded-xl glass-panel text-white font-semibold text-sm hover:border-[#8B5CF6] transition-all border border-[#1F2937]"
             >
               View Lookbook
             </Link>
@@ -92,28 +62,52 @@ export default function Home() {
         {/* Right Asymmetric Showcase Card */}
         <div className="relative flex items-center justify-center">
           <div className="absolute -inset-1 rounded-3xl bg-gradient-to-r from-[#8B5CF6] to-[#10B981] opacity-20 blur-2xl"></div>
-          <div className="relative w-full aspect-square max-w-md glass-panel rounded-3xl p-8 flex flex-col justify-between overflow-hidden group">
-            <div className="flex justify-between items-start">
-              <span className="text-xs font-bold uppercase tracking-widest text-[#10B981] bg-[#10B981]/10 px-3 py-1 rounded-full border border-[#10B981]/20">
-                Featured Flagship
-              </span>
-              <span className="text-2xl font-black text-[#8B5CF6]">
-                $799.99
-              </span>
-            </div>
+          <div className="relative w-full aspect-square max-w-md glass-panel border border-[#1F2937] rounded-3xl p-8 flex flex-col justify-between overflow-hidden group">
+            {flagshipProduct ? (
+              <>
+                <div className="flex justify-between items-start z-10">
+                  <span className="text-xs font-bold uppercase tracking-widest text-[#10B981] bg-[#10B981]/10 px-3 py-1 rounded-full border border-[#10B981]/20">
+                    Featured Flagship
+                  </span>
+                  <span className="text-2xl font-black text-[#8B5CF6]">
+                    ${flagshipProduct.price?.toFixed(2)}
+                  </span>
+                </div>
 
-            <div className="my-auto text-center text-9xl group-hover:scale-110 transition-transform duration-500">
-              🖥️
-            </div>
+                <div className="relative my-auto h-48 w-full group-hover:scale-105 transition-transform duration-500 flex items-center justify-center">
+                  {flagshipProduct.image ? (
+                    <Image
+                      src={flagshipProduct.image}
+                      alt={flagshipProduct.name}
+                      fill
+                      className="object-contain"
+                    />
+                  ) : (
+                    <span className="text-xs text-[#9CA3AF]">
+                      No Preview Available
+                    </span>
+                  )}
+                </div>
 
-            <div className="space-y-1">
-              <h3 className="text-xl font-bold text-white">
-                Monolith 32&quot; 4K OLED
-              </h3>
-              <p className="text-xs text-[#9CA3AF]">
-                240Hz Ultra-Low Latency Display
-              </p>
-            </div>
+                <div className="space-y-1 z-10">
+                  <h3 className="text-xl font-bold text-white">
+                    {flagshipProduct.name}
+                  </h3>
+                  <p className="text-xs text-[#9CA3AF]">
+                    {flagshipProduct.description}
+                  </p>
+                </div>
+              </>
+            ) : (
+              <div className="m-auto text-center space-y-2">
+                <p className="text-sm font-semibold text-white">
+                  NexusDrop Flagship Collection
+                </p>
+                <p className="text-xs text-[#9CA3AF]">
+                  Premium gear dropping soon.
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </section>
@@ -136,16 +130,15 @@ export default function Home() {
             <Link
               key={cat.name}
               href={cat.href}
-              className="glass-panel glass-panel-hover p-6 rounded-2xl flex items-center gap-4 group"
+              className="glass-panel glass-panel-hover p-6 rounded-2xl border border-[#1F2937] flex items-center justify-between group"
             >
-              <div className="text-4xl p-3 bg-[#0B0F19] rounded-xl border border-[#1F2937]">
-                {cat.icon}
-              </div>
               <div>
                 <h3 className="text-base font-bold text-white group-hover:text-[#8B5CF6] transition-colors">
                   {cat.name}
                 </h3>
-                <span className="text-xs text-[#9CA3AF]">{cat.count}</span>
+                <span className="text-xs text-[#8B5CF6] font-semibold mt-1 inline-block">
+                  Shop Category →
+                </span>
               </div>
             </Link>
           ))}
@@ -169,39 +162,69 @@ export default function Home() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {FEATURED_PRODUCTS.map((product) => (
+        {featuredProducts.length === 0 ? (
+          <div className="text-center py-16 glass-panel rounded-2xl border border-[#1F2937] space-y-3">
+            <p className="text-sm font-semibold text-white">
+              No featured items currently listed
+            </p>
+            <p className="text-xs text-[#9CA3AF]">
+              Browse our full catalog to discover available hardware.
+            </p>
             <Link
-              key={product.id}
-              href={`/products/${product.id}`}
-              className="glass-panel glass-panel-hover p-5 rounded-2xl flex flex-col justify-between group"
+              href="/products"
+              className="inline-block rounded-xl bg-[#8B5CF6] px-5 py-2 text-xs font-bold text-white hover:bg-[#7C3AED] transition-all"
             >
-              <div>
-                <div className="h-48 w-full bg-[#0B0F19] rounded-xl flex items-center justify-center text-6xl mb-4 group-hover:scale-105 transition-transform">
-                  {product.image}
-                </div>
-                <div className="flex justify-between items-center text-xs">
-                  <span className="font-semibold uppercase tracking-wider text-[#8B5CF6]">
-                    {product.category}
-                  </span>
-                  <span className="text-[#9CA3AF]">★ {product.rating}</span>
-                </div>
-                <h3 className="text-base font-semibold text-white mt-2 group-hover:text-[#8B5CF6] transition-colors">
-                  {product.name}
-                </h3>
-              </div>
-
-              <div className="mt-6 flex items-center justify-between pt-4 border-t border-[#1F2937]">
-                <span className="text-xl font-bold text-white">
-                  ${product.price}
-                </span>
-                <span className="px-3 py-1.5 rounded-lg bg-[#111827] group-hover:bg-[#8B5CF6] text-xs font-semibold text-white transition-colors border border-[#1F2937]">
-                  Quick View
-                </span>
-              </div>
+              View Catalog
             </Link>
-          ))}
-        </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {featuredProducts.map((product) => (
+              <Link
+                key={product._id}
+                href={`/products/${product.slug}`}
+                className="glass-panel glass-panel-hover p-5 rounded-2xl border border-[#1F2937] flex flex-col justify-between group"
+              >
+                <div>
+                  <div className="relative h-48 w-full bg-[#0B0F19] rounded-xl overflow-hidden mb-4 flex items-center justify-center">
+                    {product.image ? (
+                      <Image
+                        src={product.image}
+                        alt={product.name}
+                        fill
+                        className="object-cover group-hover:scale-105 transition-transform"
+                      />
+                    ) : (
+                      <span className="text-xs text-[#9CA3AF]">
+                        No Preview Available
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="font-semibold uppercase tracking-wider text-[#8B5CF6]">
+                      {product.category}
+                    </span>
+                    {product.rating && (
+                      <span className="text-[#9CA3AF]">★ {product.rating}</span>
+                    )}
+                  </div>
+                  <h3 className="text-base font-semibold text-white mt-2 group-hover:text-[#8B5CF6] transition-colors">
+                    {product.name}
+                  </h3>
+                </div>
+
+                <div className="mt-6 flex items-center justify-between pt-4 border-t border-[#1F2937]">
+                  <span className="text-xl font-bold text-white">
+                    ${product.price?.toFixed(2)}
+                  </span>
+                  <span className="px-3 py-1.5 rounded-lg bg-[#111827] group-hover:bg-[#8B5CF6] text-xs font-semibold text-white transition-colors border border-[#1F2937]">
+                    Quick View
+                  </span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
       </section>
     </div>
   );
