@@ -2,251 +2,130 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
+import { useCart } from "@/context/CartContext";
 
 export default function CheckoutPage() {
-  // Dynamic order items state (initialized empty)
-  const [orderItems, setOrderItems] = useState([]);
+  const { cart, loading, isLoggedIn, cartTotal } = useCart();
+  const [redirecting, setRedirecting] = useState(false);
+  const [error, setError] = useState("");
 
-  // Form input state
-  const [formData, setFormData] = useState({
-    fullName: "",
-    email: "",
-    address: "",
-    city: "",
-    postalCode: "",
-    country: "",
-    cardNumber: "",
-    cardExpiry: "",
-    cardCvc: "",
-  });
+  const handleCheckout = async () => {
+    setRedirecting(true);
+    setError("");
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    try {
+      const res = await fetch("/api/checkout", { method: "POST" });
+      const data = await res.json();
+
+      if (!data.success) {
+        setError(data.error || "Something went wrong.");
+        setRedirecting(false);
+        return;
+      }
+
+      window.location.href = data.url; // send the browser to Stripe's hosted page
+    } catch (err) {
+      setError("Something went wrong. Please try again.");
+      setRedirecting(false);
+    }
   };
 
-  const subtotal = orderItems.reduce(
-    (acc, item) => acc + item.price * item.quantity,
-    0,
-  );
-  const shipping = orderItems.length > 0 ? 9.99 : 0;
-  const total = subtotal + shipping;
-
-  const handleSubmitOrder = (e) => {
-    e.preventDefault();
-    if (orderItems.length === 0) return;
-    // Order submission logic goes here
-  };
-
-  return (
-    <div className="space-y-8 py-4">
-      <div>
-        <h1 className="text-3xl font-extrabold text-white">Checkout</h1>
-        <p className="text-sm text-[#9CA3AF] mt-1">
-          Complete your details to finalize your purchase.
-        </p>
+  if (loading) {
+    return (
+      <div className="py-20 text-center">
+        <p className="text-sm text-[#9CA3AF]">Loading...</p>
       </div>
+    );
+  }
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-        {/* Left Column: Checkout Form */}
-        <form onSubmit={handleSubmitOrder} className="lg:col-span-2 space-y-8">
-          {/* Step 1: Shipping Information */}
-          <section className="glass-panel p-6 rounded-2xl space-y-4 border border-[#1F2937]">
-            <h2 className="text-lg font-bold text-white flex items-center gap-2">
-              <span className="h-6 w-6 rounded-full bg-[#8B5CF6] text-xs flex items-center justify-center">
-                1
-              </span>
-              Shipping Information
-            </h2>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-semibold uppercase text-[#9CA3AF] mb-1">
-                  Full Name
-                </label>
-                <input
-                  type="text"
-                  name="fullName"
-                  value={formData.fullName}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full px-4 py-2.5 rounded-xl bg-[#0B0F19] border border-[#1F2937] text-white focus:border-[#8B5CF6] outline-none text-sm transition-colors"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold uppercase text-[#9CA3AF] mb-1">
-                  Email Address
-                </label>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full px-4 py-2.5 rounded-xl bg-[#0B0F19] border border-[#1F2937] text-white focus:border-[#8B5CF6] outline-none text-sm transition-colors"
-                />
-              </div>
-
-              <div className="sm:col-span-2">
-                <label className="block text-xs font-semibold uppercase text-[#9CA3AF] mb-1">
-                  Street Address
-                </label>
-                <input
-                  type="text"
-                  name="address"
-                  value={formData.address}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full px-4 py-2.5 rounded-xl bg-[#0B0F19] border border-[#1F2937] text-white focus:border-[#8B5CF6] outline-none text-sm transition-colors"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold uppercase text-[#9CA3AF] mb-1">
-                  City
-                </label>
-                <input
-                  type="text"
-                  name="city"
-                  value={formData.city}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full px-4 py-2.5 rounded-xl bg-[#0B0F19] border border-[#1F2937] text-white focus:border-[#8B5CF6] outline-none text-sm transition-colors"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold uppercase text-[#9CA3AF] mb-1">
-                  Postal Code
-                </label>
-                <input
-                  type="text"
-                  name="postalCode"
-                  value={formData.postalCode}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full px-4 py-2.5 rounded-xl bg-[#0B0F19] border border-[#1F2937] text-white focus:border-[#8B5CF6] outline-none text-sm transition-colors"
-                />
-              </div>
-            </div>
-          </section>
-
-          {/* Step 2: Payment Details */}
-          <section className="glass-panel p-6 rounded-2xl space-y-4 border border-[#1F2937]">
-            <h2 className="text-lg font-bold text-white flex items-center gap-2">
-              <span className="h-6 w-6 rounded-full bg-[#8B5CF6] text-xs flex items-center justify-center">
-                2
-              </span>
-              Payment Gateway
-            </h2>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold uppercase text-[#9CA3AF] mb-1">
-                  Card Number
-                </label>
-                <input
-                  type="text"
-                  name="cardNumber"
-                  value={formData.cardNumber}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full px-4 py-2.5 rounded-xl bg-[#0B0F19] border border-[#1F2937] text-white focus:border-[#8B5CF6] outline-none text-sm transition-colors"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold uppercase text-[#9CA3AF] mb-1">
-                    Expiration Date
-                  </label>
-                  <input
-                    type="text"
-                    name="cardExpiry"
-                    value={formData.cardExpiry}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-4 py-2.5 rounded-xl bg-[#0B0F19] border border-[#1F2937] text-white focus:border-[#8B5CF6] outline-none text-sm transition-colors"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold uppercase text-[#9CA3AF] mb-1">
-                    CVC / CVV
-                  </label>
-                  <input
-                    type="text"
-                    name="cardCvc"
-                    value={formData.cardCvc}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-4 py-2.5 rounded-xl bg-[#0B0F19] border border-[#1F2937] text-white focus:border-[#8B5CF6] outline-none text-sm transition-colors"
-                  />
-                </div>
-              </div>
-            </div>
-          </section>
-
-          <button
-            type="submit"
-            disabled={orderItems.length === 0}
-            className="w-full py-4 rounded-xl bg-[#10B981] hover:bg-[#059669] disabled:bg-[#1F2937] disabled:text-[#9CA3AF] disabled:cursor-not-allowed font-bold text-white transition-all shadow-[0_0_20px_rgba(16,185,129,0.3)]"
+  if (!isLoggedIn) {
+    return (
+      <div className="py-20 text-center space-y-4">
+        <div className="glass-panel p-12 rounded-2xl max-w-lg mx-auto border border-[#1F2937]">
+          <h2 className="text-xl font-bold text-white">Sign in to check out</h2>
+          <Link
+            href="/login"
+            className="mt-6 inline-block rounded-xl bg-[#8B5CF6] px-5 py-2.5 text-xs font-bold text-white hover:bg-[#7C3AED] transition-all"
           >
-            Complete Secure Order
-          </button>
-        </form>
-
-        {/* Right Column: Order Summary */}
-        <div className="glass-panel p-6 rounded-2xl h-fit space-y-6 border border-[#1F2937]">
-          <h3 className="text-lg font-bold text-white border-b border-[#1F2937] pb-3">
-            Order Summary
-          </h3>
-
-          {orderItems.length === 0 ? (
-            <div className="text-center py-6 space-y-3">
-              <p className="text-sm text-[#9CA3AF]">No items in checkout.</p>
-              <Link
-                href="/products"
-                className="inline-block text-xs font-semibold text-[#8B5CF6] hover:underline"
-              >
-                Return to Shop →
-              </Link>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {orderItems.map((item) => (
-                <div
-                  key={item.id}
-                  className="flex justify-between text-sm text-white"
-                >
-                  <span>
-                    {item.name} (x{item.quantity})
-                  </span>
-                  <span>${(item.price * item.quantity).toFixed(2)}</span>
-                </div>
-              ))}
-            </div>
-          )}
-
-          <div className="space-y-3 text-sm text-[#9CA3AF] border-t border-[#1F2937] pt-4">
-            <div className="flex justify-between">
-              <span>Subtotal</span>
-              <span className="text-white">${subtotal.toFixed(2)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Shipping</span>
-              <span className="text-white">
-                {shipping > 0 ? `$${shipping.toFixed(2)}` : "$0.00"}
-              </span>
-            </div>
-            <div className="flex justify-between font-bold text-white text-base border-t border-[#1F2937] pt-3">
-              <span>Total</span>
-              <span className="text-[#8B5CF6]">${total.toFixed(2)}</span>
-            </div>
-          </div>
+            Sign In
+          </Link>
         </div>
       </div>
+    );
+  }
+
+  if (cart.length === 0) {
+    return (
+      <div className="py-20 text-center space-y-4">
+        <div className="glass-panel p-12 rounded-2xl max-w-lg mx-auto border border-[#1F2937]">
+          <h2 className="text-xl font-bold text-white">Your cart is empty</h2>
+          <Link
+            href="/products"
+            className="mt-6 inline-block rounded-xl bg-[#8B5CF6] px-5 py-2.5 text-xs font-bold text-white hover:bg-[#7C3AED] transition-all"
+          >
+            Explore Collection
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="py-6 max-w-2xl mx-auto space-y-8">
+      <h1 className="text-3xl font-extrabold text-white tracking-tight">
+        Checkout
+      </h1>
+
+      <div className="glass-panel p-6 rounded-2xl border border-[#1F2937] space-y-4">
+        <h2 className="text-sm font-bold text-white border-b border-[#1F2937] pb-3">
+          Order Summary
+        </h2>
+
+        {cart.map((item) => (
+          <div key={item.product._id} className="flex items-center gap-4">
+            <div className="relative h-14 w-14 bg-[#0B0F19] rounded-lg overflow-hidden flex-shrink-0 flex items-center justify-center">
+              {item.product.image ? (
+                <Image
+                  src={item.product.image}
+                  alt={item.product.name}
+                  fill
+                  className="object-cover"
+                />
+              ) : (
+                <span className="text-[9px] text-[#9CA3AF]">No Image</span>
+              )}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm text-white truncate">{item.product.name}</p>
+              <p className="text-xs text-[#9CA3AF]">Qty {item.quantity}</p>
+            </div>
+            <p className="text-sm font-semibold text-white">
+              ${(item.product.price * item.quantity).toFixed(2)}
+            </p>
+          </div>
+        ))}
+
+        <div className="border-t border-[#1F2937] pt-4 flex justify-between text-base font-bold text-white">
+          <span>Total</span>
+          <span>${cartTotal.toFixed(2)}</span>
+        </div>
+      </div>
+
+      {error && <p className="text-xs text-red-400 text-center">{error}</p>}
+
+      <button
+        onClick={handleCheckout}
+        disabled={redirecting}
+        className="w-full py-3.5 rounded-xl bg-[#8B5CF6] hover:bg-[#7C3AED] disabled:opacity-50 font-bold text-white transition-all shadow-[0_0_20px_rgba(139,92,246,0.3)]"
+      >
+        {redirecting ? "Redirecting to secure checkout..." : "Pay with Stripe"}
+      </button>
+
+      <p className="text-center text-[10px] text-[#6B7280]">
+        Payments are securely processed by Stripe. NexusDrop never sees or
+        stores your card details.
+      </p>
     </div>
   );
 }
