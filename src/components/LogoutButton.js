@@ -1,12 +1,15 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useCart } from "@/context/CartContext";
 
 export default function LogoutButton() {
   const router = useRouter();
+  const { refetchCart } = useCart();
 
   const handleLogout = async () => {
     await fetch("/api/auth/logout", { method: "POST" });
+    await refetchCart(); // re-checks auth state, which will now correctly return empty/logged-out
     router.push("/");
     router.refresh();
   };

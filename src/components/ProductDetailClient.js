@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useCart } from "@/context/CartContext";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -18,6 +19,7 @@ function StarRating({ value, size = "text-sm" }) {
 
 export default function ProductDetailClient({ product }) {
   const router = useRouter();
+  const { addToCart } = useCart();
   const [quantity, setQuantity] = useState(1);
   const [addedMessage, setAddedMessage] = useState("");
 
@@ -30,9 +32,13 @@ export default function ProductDetailClient({ product }) {
 
   const inStock = product.stock > 0;
 
-  const handleAddToCart = () => {
-    // Cart state management arrives in Module 9 — placeholder for now
-    setAddedMessage(`Added ${quantity} × ${product.name} (cart coming soon!)`);
+  const handleAddToCart = async () => {
+    const result = await addToCart(product._id, quantity);
+    if (result.success) {
+      setAddedMessage(`Added ${quantity} × ${product.name} to your cart!`);
+    } else {
+      setAddedMessage(result.error || "Something went wrong.");
+    }
     setTimeout(() => setAddedMessage(""), 2500);
   };
 
