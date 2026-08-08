@@ -2,14 +2,16 @@
 
 import { useRouter } from "next/navigation";
 import { useCart } from "@/context/CartContext";
+import { useWishlist } from "@/context/WishlistContext";
 
 export default function LogoutButton() {
   const router = useRouter();
   const { refetchCart } = useCart();
+  const { refetchWishlist } = useWishlist();
 
   const handleLogout = async () => {
     await fetch("/api/auth/logout", { method: "POST" });
-    await refetchCart(); // re-checks auth state, which will now correctly return empty/logged-out
+    await Promise.all([refetchCart(), refetchWishlist()]);
     router.push("/");
     router.refresh();
   };

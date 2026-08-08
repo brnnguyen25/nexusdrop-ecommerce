@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/context/CartContext";
+import WishlistHeartButton from "@/components/WishlistHeartButton";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -95,6 +96,10 @@ export default function ProductDetailClient({ product }) {
           ) : (
             <span className="text-xs text-[#9CA3AF]">No Image Available</span>
           )}
+          <WishlistHeartButton
+            productId={product._id}
+            className="absolute top-3 right-3 h-10 w-10 bg-[#0B0F19]/80 backdrop-blur-sm text-2xl"
+          />
         </div>
 
         {/* Right: Details & Purchase Panel */}

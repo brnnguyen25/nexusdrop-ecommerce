@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useState, useMemo } from "react";
+import WishlistHeartButton from "@/components/WishlistHeartButton";
 
 const CATEGORIES = [
   { label: "Audio Tech", value: "audio" },
@@ -176,6 +177,10 @@ export default function ProductsPageClient({ products, initialCategory }) {
                           No Image Preview
                         </span>
                       )}
+                      <WishlistHeartButton
+                        productId={product._id}
+                        className="absolute top-2 right-2 h-8 w-8 bg-[#0B0F19]/80 backdrop-blur-sm text-lg"
+                      />
                     </div>
 
                     <span className="text-xs font-semibold uppercase tracking-wider text-[#8B5CF6]">
